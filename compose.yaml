@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app # Monta o diretório atual no contêiner para desenvolvimento
+    env_file:
+      - ./.env # Carrega variáveis de ambiente do arquivo .env
+    depends_on:
+      - db
+    command: gunicorn --bind 0.0.0.0:5000 "app:create_app()"
+
+  db:
+    image: alpine/git # Usaremos um volume para persistir o SQLite, então uma imagem leve é suficiente
+    volumes:
+      - db_data:/app/data # Monta um volume para persistir o banco de dados
+    command: "tail -f /dev/null" # Mantém o contêiner do DB rodando
+
+volumes:
+  db_data: # Define o volume para persistência dos dados do banco

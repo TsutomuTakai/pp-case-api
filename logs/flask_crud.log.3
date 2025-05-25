@@ -1,0 +1,115 @@
+2025-05-25 12:48:22,285 ERROR: Exception on / [GET] [in D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py:875]
+Traceback (most recent call last):
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask_restx\api.py", line 446, in render_root
+    self.abort(HTTPStatus.NOT_FOUND)
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask_restx\namespace.py", line 153, in abort
+    abort(*args, **kwargs)
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask_restx\errors.py", line 28, in abort
+    flask.abort(code)
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\helpers.py", line 284, in abort
+    current_app.aborter(code, *args, **kwargs)
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\werkzeug\exceptions.py", line 876, in __call__
+    raise self.mapping[code](*args, **kwargs)
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask_restx\api.py", line 672, in error_router
+    return original_handler(e)
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 802, in handle_user_exception
+    return self.handle_http_exception(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 777, in handle_http_exception
+    return self.ensure_sync(handler)(e)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\app.py", line 34, in handle_not_found_error
+    app.logger.warning(f"404 Not Found: {request.url}") # Log a URL não encontrada
+                                         ^^^^^^^
+NameError: name 'request' is not defined
+2025-05-25 12:48:22,288 ERROR: HTTP Exception 500: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application. [in D:\Projetos\pp-case-api\app.py:51]
+2025-05-25 12:48:22,350 ERROR: Exception on /favicon.ico [GET] [in D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py:875]
+Traceback (most recent call last):
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask_restx\api.py", line 672, in error_router
+    return original_handler(e)
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 802, in handle_user_exception
+    return self.handle_http_exception(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 777, in handle_http_exception
+    return self.ensure_sync(handler)(e)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\app.py", line 34, in handle_not_found_error
+    app.logger.warning(f"404 Not Found: {request.url}") # Log a URL não encontrada
+                                         ^^^^^^^
+NameError: name 'request' is not defined
+2025-05-25 12:48:22,354 ERROR: HTTP Exception 500: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application. [in D:\Projetos\pp-case-api\app.py:51]
+2025-05-25 12:48:31,063 INFO: Flask CRUD startup [in D:\Projetos\pp-case-api\app.py:29]
+2025-05-25 12:48:35,210 WARNING: 404 Not Found: http://localhost:5000/ [in D:\Projetos\pp-case-api\app.py:34]
+2025-05-25 12:48:35,256 WARNING: 404 Not Found: http://localhost:5000/favicon.ico [in D:\Projetos\pp-case-api\app.py:34]
+2025-05-25 12:49:24,316 WARNING: 404 Not Found: http://localhost:5000/swagger-ui/ [in D:\Projetos\pp-case-api\app.py:34]
+2025-05-25 12:50:21,826 ERROR: Erro interno do servidor na API: Missing Authorization Header [in D:\Projetos\pp-case-api\routes.py:64]
+Traceback (most recent call last):
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask_restx\api.py", line 402, in wrapper
+    resp = resource(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask\views.py", line 110, in view
+    return current_app.ensure_sync(self.dispatch_request)(**kwargs)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask_restx\resource.py", line 41, in dispatch_request
+    resp = meth(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask_restx\marshalling.py", line 244, in wrapper
+    resp = f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask_jwt_extended\view_decorators.py", line 167, in decorator
+    verify_jwt_in_request(
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask_jwt_extended\view_decorators.py", line 94, in verify_jwt_in_request
+    jwt_data, jwt_header, jwt_location = _decode_jwt_from_request(
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projetos\pp-case-api\venv\Lib\site-packages\flask_jwt_extended\view_decorators.py", line 358, in _decode_jwt_from_request
+    raise NoAuthorizationError(errors[0])
+flask_jwt_extended.exceptions.NoAuthorizationError: Missing Authorization Header
