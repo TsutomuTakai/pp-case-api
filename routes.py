@@ -1,231 +1,132 @@
-# routes.py
-from flask import request, jsonify, current_app
-from flask_restx import Api, Resource, fields, reqparse
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import jsonify, request, current_app
+import sys
 from models import db, User
-from schemas import user_schema, users_schema
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from flask_caching import Cache
+from schemas import UserSchema, UserInputSchema, PaginatedUserSchema, UserQueryArgsSchema # Importe todos os schemas necessários
+from flask_jwt_extended import jwt_required, get_jwt_identity # Importe jwt_required e get_jwt_identity
+from flask_smorest import Blueprint, abort # Importe Blueprint e abort do Flask-Smorest
+from flask.views import MethodView
+from marshmallow import fields, validate # Importe do marshmallow diretamente se precisar de validadores
 
-# IMPORTAR AS EXCEÇÕES DO WERKZEUG AQUI
-from werkzeug.exceptions import NotFound, BadRequest, Conflict, InternalServerError, HTTPException
-
-authorizations = {
-    'jwt': { # Este é o nome que você usará para referenciar este esquema de segurança
-        'type': 'apiKey',
-        'in': 'header',
-        'name': 'Authorization',
-        'description': "Por favor, insira o token JWT com 'Bearer ' no início (ex: Bearer <token>)"
-    }
-}
-
-api = Api(
-    version='1.0',
-    title='API de Gerenciamento de Usuários',
-    description='Uma API CRUD simples para gerenciar usuários.',
-    doc='/swagger-ui',
-    security='jwt', # Define 'jwt' como o esquema de segurança padrão para toda a API
-    authorizations=authorizations # Adiciona as definições de autorização
-)
-limiter = Limiter(
-    key_func=get_remote_address,
-    # default_limits e storage_uri serão configurados via app.config['LIMITER_DEFAULT_LIMIT']
+# Crie um Blueprint do Smorest
+# O prefixo da URL aqui define o namespace da sua API (ex: /v1)
+# doc_name e doc_version são para a documentação OpenAPI
+blp_v1 = Blueprint(
+    'api_v1', 'api_v1', url_prefix='/v1',
+    description='Operações da API de Usuários (Versão 1)',
 )
 
-cache = Cache()
+# --- Manipuladores de Erro Específicos do Smorest (Opcional, se precisar de formatação diferente) ---
+# Você já tem manipuladores globais em app.py, mas pode adicionar específicos aqui.
+# Exemplo para um erro de validação (BadRequest)
+@blp_v1.errorhandler(400) # Smorest lida com 400s de validação automaticamente, mas pode ser customizado
+def handle_smorest_bad_request(error):
+    # Flask-Smorest geralmente formata erros de validação bem.
+    # Você pode personalizar o corpo da resposta de erro aqui se quiser.
+    current_app.logger.error(f"Smorest Bad Request: {error.messages}")
+    return jsonify({
+        'message': 'Dados de entrada inválidos',
+        'errors': error.messages # `error.messages` contém os detalhes da validação
+    }), 400
 
-# Modelo para documentação Swagger
-user_model = api.model('User', {
-    'id': fields.Integer(readOnly=True, description='O identificador único do usuário'),
-    'name': fields.String(required=True, description='O nome do usuário'),
-    'email': fields.String(required=True, description='O endereço de email do usuário'),
-})
+# --- Fim Manipuladores de Erro Específicos do Smorest ---
 
-paginated_user_model = api.model('PaginatedUserList', {
-    'users': fields.List(fields.Nested(user_model), description='Lista de usuários'),
-    'total_users': fields.Integer(description='Número total de usuários'),
-    'total_pages': fields.Integer(description='Número total de páginas'),
-    'current_page': fields.Integer(description='Página atual'),
-    'per_page': fields.Integer(description='Usuários por página'),
-    'has_next': fields.Boolean(description='Se existe uma próxima página'),
-    'has_prev': fields.Boolean(description='Se existe uma página anterior'),
-    'next_page': fields.Integer(description='Número da próxima página (nulo se não houver)'),
-    'prev_page': fields.Integer(description='Número da página anterior (nulo se não houver)')
-})
 
-user_input_model = api.model('UserInput', {
-    'name': fields.String(required=True, description='O nome do usuário'),
-    'email': fields.String(required=True, description='O endereço de email do usuário'),
-})
+# --- RECURSO: Listagem e Criação de Usuários ---
+@blp_v1.route('/users')
+class UserList(MethodView): # Use MethodView
+    @blp_v1.doc(description='Retorna a lista de todos os usuários com filtros e paginação.')
+    @blp_v1.arguments(UserQueryArgsSchema, location='query') # Schema para query parameters
+    @blp_v1.response(200, PaginatedUserSchema) # Schema para a resposta paginada
+    @jwt_required() # Protegido por JWT
+    def get(self, args):
+        print("!!!!! DENTRO DO MÉTODO GET UserList !!!!!", file=sys.stderr) # Para depuração
 
-def configure_routes(app):
-    api.init_app(app)
-    limiter.init_app(app) # Inicializa o limiter com a instância do app
-    cache.init_app(app)   # Inicializa o cache com a instância do app
+        # Lógica de filtragem
+        query = User.query
+        if args.get('email'):
+            query = query.filter(User.email.ilike(f"%{args['email']}%"))
+        if args.get('name'):
+            query = query.filter(User.name.ilike(f"%{args['name']}%"))
 
-    # --- MANIPULADORES DE ERRO ESPECÍFICOS DA API (Flask-RESTX) ---
-    # Estes são para exceções que o Flask-RESTX (ou Flask-SQLAlchemy) pode levantar
-    # no contexto da API, como api.abort().
-    @api.errorhandler(NotFound) # Passa a CLASSE NotFound
-    def api_not_found_error(error):
-        return {'message': 'Recurso não encontrado na API'}, 404
+        # Lógica de paginação
+        page = args.get('page', 1)
+        per_page = args.get('per_page', 10)
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
-    @api.errorhandler(BadRequest) # Passa a CLASSE BadRequest
-    def api_bad_request_error(error):
-        errors_detail = error.data.get('errors') if hasattr(error, 'data') and error.data else str(error)
-        return {'message': 'Requisição inválida na API', 'errors': errors_detail}, 400
+        # Monta a resposta paginada
+        return {
+            'page': pagination.page,
+            'per_page': pagination.per_page,
+            'total_pages': pagination.pages,
+            'total_items': pagination.total,
+            'items': pagination.items
+        }
 
-    @api.errorhandler(Conflict) # Passa a CLASSE Conflict
-    def api_conflict_error(error):
-        errors_detail = error.data.get('errors') if hasattr(error, 'data') and error.data else str(error)
-        return {'message': 'Conflito de dados na API', 'errors': errors_detail}, 409
+    @blp_v1.doc(description='Cria um novo usuário.')
+    @blp_v1.arguments(UserInputSchema) # Schema para validação do corpo da requisição (JSON)
+    @blp_v1.response(201, UserSchema, description="Usuário criado com sucesso")
+    @jwt_required() # Protegido por JWT
+    def post(self, new_user_data):
+        print("!!!!! DENTRO DO MÉTODO POST UserList !!!!!", file=sys.stderr) # Para depuração
+        if User.query.filter_by(email=new_user_data['email']).first():
+            abort(409, message="Um usuário com este e-mail já existe.") # Use abort do Smorest
+        user = User(**new_user_data)
+        user.set_password(new_user_data['password']) # Hash da senha
+        db.session.add(user)
+        db.session.commit()
+        return user # O Smorest serializa automaticamente com UserSchema (definido no @blp_v1.response)
 
-    @api.errorhandler(Exception) # Captura qualquer outra exceção não tratada pela API
-    def api_default_error_handler(error):
-        current_app.logger.exception(f"Erro interno do servidor na API: {error}") # Loga a exceção completa
-        return {'message': 'Ocorreu um erro interno no servidor na API'}, 500
-    # --- FIM DOS MANIPULADORES DE ERRO DA API ---
 
-    # Namespace para a versão 1 da API
-    ns_v1 = api.namespace('v1', description='Operações de usuários')
+# --- RECURSO: Detalhes, Atualização e Exclusão de Usuários ---
+@blp_v1.route('/users/<int:user_id>')
+class UserResource(MethodView): # Use MethodView
+    @blp_v1.doc(description='Retorna os detalhes de um usuário específico.')
+    @blp_v1.response(200, UserSchema)
+    @blp_v1.alt_response(404, description="Usuário não encontrado") # Documenta um possível 404
+    @jwt_required() # Protegido por JWT
+    def get(self, user_id):
+        print(f"!!!!! DENTRO DO MÉTODO GET UserResource para user_id: {user_id} !!!!!", file=sys.stderr) # Para depuração
+        user = User.query.get_or_404(user_id, description="Usuário não encontrado.") # get_or_404 do SQLAlchemy
+        return user
 
-    # Parser para paginação, filtragem e ordenação - MOVIDO PARA DENTRO DA FUNÇÃO
-    parser = reqparse.RequestParser()
-    parser.add_argument('page', type=int, help='Número da página', default=1)
-    # Acessa app.config['PER_PAGE'] APÓS o app estar configurado
-    parser.add_argument('per_page', type=int, help='Itens por página', default=app.config['PER_PAGE'])
-    parser.add_argument('name', type=str, help='Filtrar por nome (substring)', location='args')
-    parser.add_argument('email', type=str, help='Filtrar por email (substring)', location='args')
-    parser.add_argument('sort_by', type=str, help='Campo para ordenação (name, email)', choices=('name', 'email'), location='args')
-    parser.add_argument('order', type=str, help='Ordem (asc, desc)', choices=('asc', 'desc'), default='asc', location='args')
+    @blp_v1.doc(description='Atualiza um usuário existente.')
+    @blp_v1.arguments(UserInputSchema(partial=True)) # partial=True permite atualizações parciais
+    @blp_v1.response(200, UserSchema, description="Usuário atualizado com sucesso")
+    @blp_v1.alt_response(404, description="Usuário não encontrado")
+    @jwt_required() # Protegido por JWT
+    def put(self, new_user_data, user_id):
+        print(f"!!!!! DENTRO DO MÉTODO PUT UserResource para user_id: {user_id} !!!!!", file=sys.stderr) # Para depuração
+        user = User.query.get_or_404(user_id, description="Usuário não encontrado.")
+        if 'email' in new_user_data and new_user_data['email'] != user.email:
+            if User.query.filter_by(email=new_user_data['email']).first():
+                abort(409, message="Um usuário com este e-mail já existe.")
+        
+        # Atualiza os campos do usuário
+        for key, value in new_user_data.items():
+            if key == 'password':
+                user.set_password(value) # Hash da senha
+            else:
+                setattr(user, key, value)
+        
+        db.session.commit()
+        return user # Smorest serializa automaticamente
 
-    @ns_v1.route('/users/')
-    class UserList(Resource):
-        @api.doc('listar_usuarios')
-        @api.expect(parser)
-        @ns_v1.marshal_list_with(paginated_user_model)
-        @limiter.limit("10 per minute") # Limite específico para este endpoint
-        @cache.cached(timeout=60, query_string=True) # Cacheia a resposta baseada na query string
-        def get(self):
-            """Retorna a lista de todos os usuários com paginação, filtragem e ordenação."""
-            args = parser.parse_args()
-            page = args['page']
-            per_page = args['per_page']
-            name_filter = args['name']
-            email_filter = args['email']
-            sort_by = args['sort_by']
-            order = args['order']
+    @blp_v1.doc(description='Exclui um usuário existente.')
+    @blp_v1.response(204, description="Usuário excluído com sucesso") # 204 No Content
+    @blp_v1.alt_response(404, description="Usuário não encontrado")
+    @jwt_required() # Protegido por JWT
+    def delete(self, user_id):
+        print(f"!!!!! DENTRO DO MÉTODO DELETE UserResource para user_id: {user_id} !!!!!", file=sys.stderr) # Para depuração
+        user = User.query.get_or_404(user_id, description="Usuário não encontrado.")
+        db.session.delete(user)
+        db.session.commit()
+        return '', 204 # Retorna vazio com status 204
 
-            query = User.query
 
-            if name_filter:
-                query = query.filter(User.name.ilike(f'%{name_filter}%'))
-            if email_filter:
-                query = query.filter(User.email.ilike(f'%{email_filter}%'))
-
-            if sort_by:
-                if order == 'desc':
-                    query = query.order_by(getattr(User, sort_by).desc())
-                else:
-                    query = query.order_by(getattr(User, sort_by).asc())
-
-            pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-            users_data = users_schema.dump(pagination.items)
-
-            # Retorne um dicionário Python que corresponda exatamente à estrutura do paginated_user_model.
-            # O @ns_v1.marshal_with(paginated_user_model) cuidará de convertê-lo em JSON.
-            return {
-                'users': users_data, # Aqui você passa a lista de dicionários já serializada pelo Marshmallow
-                'total_users': pagination.total,
-                'total_pages': pagination.pages,
-                'current_page': pagination.page,
-                'per_page': pagination.per_page,
-                'has_next': pagination.has_next,
-                'has_prev': pagination.has_prev,
-                'next_page': pagination.next_num,
-                'prev_page': pagination.prev_num
-            }
-
-        @api.doc('criar_usuario')
-        @api.expect(user_input_model)
-        @ns_v1.marshal_with(user_model, code=201)
-        @jwt_required()
-        @limiter.limit("5 per minute") # Limite para criação de usuários
-        def post(self):
-            """Adiciona um novo usuário."""
-            current_user_id = get_jwt_identity() # Obtém o ID do usuário logado
-            current_app.logger.info(f"Usuário {current_user_id} tentando adicionar um novo usuário.")
-
-            data = api.payload # Flask-RESTX já faz o parse do JSON
-
-            # Validação de email duplicado
-            existing_user = User.query.filter_by(email=data['email']).first()
-            if existing_user:
-                api.abort(409, "Email já cadastrado") # Lança um erro 409 com mensagem
-
-            new_user = User(name=data['name'], email=data['email'])
-            db.session.add(new_user)
-            db.session.commit()
-            cache.clear() # Limpa o cache após uma alteração nos dados
-            return new_user, 201
-
-    @ns_v1.route('/users/<int:user_id>')
-    @api.param('user_id', 'O identificador do usuário')
-    class UserResource(Resource):
-        @api.doc('obter_usuario')
-        @ns_v1.marshal_with(user_model)
-        @limiter.limit("20 per minute") # Limite para recuperação de um usuário específico
-        @cache.cached(timeout=60) # Cacheia a resposta por 60 segundos
-        def get(self, user_id):
-            """Retorna os detalhes de um usuário específico."""
-            user = User.query.get_or_404(user_id, description='Usuário não encontrado')
-            return user_schema.dump(user)
-
-        @api.doc('atualizar_usuario')
-        @api.expect(user_input_model)
-        @ns_v1.marshal_with(user_model)
-        @jwt_required() # Protege este endpoint com JWT
-        @limiter.limit("5 per minute") # Limite para atualização de usuários
-        def put(self, user_id):
-            """Atualiza os dados de um usuário existente."""
-            current_user_id = get_jwt_identity()
-            current_app.logger.info(f"Usuário {current_user_id} tentando atualizar o usuário {user_id}.")
-
-            user = User.query.get_or_404(user_id, description='Usuário não encontrado')
-            data = api.payload
-
-            if 'name' in data:
-                user.name = data['name']
-            if 'email' in data:
-                # Validação de email duplicado para outros usuários
-                existing_user = User.query.filter(User.email == data['email'], User.id != user_id).first()
-                if existing_user:
-                    api.abort(409, "Email já cadastrado para outro usuário")
-                user.email = data['email']
-
-            db.session.commit()
-            cache.clear() # Limpa o cache após uma alteração nos dados
-            return user_schema.dump(user)
-
-        @api.doc('deletar_usuario')
-        @api.response(204, 'Usuário deletado com sucesso')
-        @jwt_required() # Protege este endpoint com JWT
-        @limiter.limit("2 per minute") # Limite para deleção de usuários
-        def delete(self, user_id):
-            """Remove um usuário."""
-            current_user_id = get_jwt_identity()
-            current_app.logger.info(f"Usuário {current_user_id} tentando deletar o usuário {user_id}.")
-
-            user = User.query.get_or_404(user_id, description='Usuário não encontrado')
-            db.session.delete(user)
-            db.session.commit()
-            cache.clear() # Limpa o cache após uma alteração nos dados
-            return '', 204
-
-    @api.route('/protected')
-    class ProtectedResource(Resource):
-        @jwt_required()
-        def get(self):
-            current_user = get_jwt_identity()
-            return jsonify({"hello": "from protected endpoint", "user": current_user})
+# --- Função para configurar as rotas Smorest no app ---
+def configure_routes_smorest(api_instance):
+    # Registre o blueprint no Smorest API instance
+    api_instance.register_blueprint(blp_v1)
+    # Não há necessidade de app.register_blueprint aqui, o Smorest faz isso
+    # A URL para a documentação será /openapi ou /docs (dependendo da configuração do Smorest)
+    # As rotas serão /v1/users, /v1/users/<id>, etc.

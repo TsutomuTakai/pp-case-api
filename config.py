@@ -6,8 +6,8 @@ load_dotenv() # Carrega as variáveis de ambiente do arquivo .env
 class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///users.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'uma-chave-secreta-de-fallback'
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'uma-chave-secreta-jwt-de-fallback'
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') 
     RESTX_MASK_SWAGGER = False # Para exibir todos os campos no Swagger UI
     # Configuração de paginação padrão
     PER_PAGE = 10
