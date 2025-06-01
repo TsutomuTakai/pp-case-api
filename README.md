@@ -4,6 +4,24 @@ Repositório para etapa de avaliação
 # Proposta
 Seguir o guia **[proposto](doc/prova.md)**
 
+# Para testar
+
+1. Crie um ambiente virtual e instale as dependencias `pip install -r requirements.txt`
+
+2. A aplicação funciona decentemente dando um simples `flask run`
+    1. Você também pode construir a imagem Dockerfile
+
+4. Após inicializar a aplicação do jeito que preferir recupere seu token de acesso
+>  curl -X POST -H "Content-Type: application/json" -d "{\"email\": \"test@example.com\", \"password\": \"password\"}" http://localhost:5000/login
+
+4. Uma interface completa do swagger-iu está disponível em http://localhost:5000/docs
+
+5. Todos os testes unitários estão configurados e funcionais, basta executar o `pytest` no diretório raíz do repositório
+
+6. De qualquer maneira que for inicializada a aplicação já existem dados populados na instancia do SQLite.
+
+7. Sintam-se a vontade para testar e quebrar esta aplicação!
+
 #  Visão Geral da Aplicação
 1. **Flask**: pré-requisito da proposta, framework leve simples e com amplo suporte da comunidade desenvolvedora.
 2. **SQLite**: pré-requisito da proposta, mini engine de SQL para aplicações de pequeno porte com poucos requisitos de memória.
