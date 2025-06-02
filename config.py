@@ -6,7 +6,7 @@ load_dotenv() # Carrega as variáveis de ambiente do arquivo .env
 
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///instance/users.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///users.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Configuração do JWT 

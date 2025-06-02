@@ -104,6 +104,7 @@ def create_app(config_object='config.Config'):
     configure_routes_smorest(api)
 
     with app.app_context():
+        print(app.config['SQLALCHEMY_DATABASE_URI'])
         db.create_all() # Cria as tabelas se não existirem
         # Adição usuário de teste 
         if not User.query.filter_by(email="test@example.com").first():

@@ -26,11 +26,3 @@ class User(db.Model):
             'name': self.name,
             'email': self.email
         }
-
-    def to_dict_with_password(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'email': self.email,
-            'password_hash': self.password_hash
-        }

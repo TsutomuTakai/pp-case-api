@@ -10,6 +10,7 @@ Seguir o guia **[proposto](doc/prova.md)**
 
 2. A aplicação funciona decentemente dando um simples `flask run`
     1. Você também pode construir a imagem Dockerfile
+    2. Ou simplesmente executar `make run` via terminal (via WSL ou git bash)
 
 4. Após inicializar a aplicação do jeito que preferir recupere seu token de acesso
 >  curl -X POST -H "Content-Type: application/json" -d "{\"email\": \"test@example.com\", \"password\": \"password\"}" http://localhost:5000/login
