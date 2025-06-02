@@ -12,6 +12,7 @@ from auth import configure_auth, jwt
 from routes import configure_routes_smorest, limiter, cache
 
 def create_app(config_object='config.Config'):
+    """Cria e configura o aplicativo Flask."""
     app = Flask(__name__)
     app.config.from_object(config_object)
 
@@ -41,43 +42,49 @@ def create_app(config_object='config.Config'):
 
     api = Api(app, spec_kwargs={"openapi_version": app.config["OPENAPI_VERSION"]})
 
-    @app.errorhandler(NotFound) # Captura erros 404
+    @app.errorhandler(NotFound) 
     def handle_not_found_error(e):
+        """Captura erros 404."""
         current_app.logger.error(f"404 Not Found: {e.description}")
         return jsonify({'message': 'Recurso não encontrado', 'code': 404}), 404
 
-    @app.errorhandler(BadRequest) # Captura erros 400 
+    @app.errorhandler(BadRequest)
     def handle_bad_request_error(e):
+        """Captura erros 400."""
         current_app.logger.error(f"400 Bad Request: {e.description}")
         errors_detail = e.messages if hasattr(e, 'messages') else e.description
         return jsonify({'message': 'Requisição inválida', 'errors': errors_detail, 'code': 400}), 400
 
-    @app.errorhandler(Unauthorized) # Captura erros 401 (geralmente de JWT loaders ou outras fontes)
+    @app.errorhandler(Unauthorized) 
     def handle_unauthorized_error(e):
+        """Captura erros 401."""
         current_app.logger.error(f"401 Unauthorized: {e.description}")
         if e.response:
             return e.response, e.code
         return jsonify({'message': 'Autenticação inválida', 'errors': e.description, 'code': 401}), 401
     
-    @app.errorhandler(UnprocessableEntity) # Captura erros 422 (incluindo validação de schema do Smorest)
+    @app.errorhandler(UnprocessableEntity) 
     def handle_smorest_bad_request_error(e):
+        """Captura erros 422."""
         current_app.logger.error(f"422 Unprocessable Entity: {e.description}")
         errors_detail = e.messages if hasattr(e, 'messages') else e.description
         return jsonify({'message': 'Dados de entrada inválidos', 'errors': errors_detail, 'code': 422}), 422
     
-    @app.errorhandler(TooManyRequests) # Captura erros 429 (do Flask-Limiter)
+    @app.errorhandler(TooManyRequests) 
     def handle_too_many_requests_error(e):
+        """Captura erros 429."""
         current_app.logger.error(f"429 Too Many Requests: {e.description}")
         return jsonify({'message': 'Muitas requisições', 'errors': e.description, 'code': 429}), 429
 
-    @app.errorhandler(Conflict) # Captura erros 409
+    @app.errorhandler(Conflict) 
     def handle_conflict_error(e):
+        """Captura erros 409."""
         current_app.logger.error(f"409 Conflict: {e.description}")
         return jsonify({'message': 'Conflito de recurso', 'errors': e.description, 'code': 409}), 409
 
-    @app.errorhandler(HTTPException) # Manipulador genérico para exceções HTTP (Flask/Werkzeug)
+    @app.errorhandler(HTTPException) 
     def handle_http_exception(e):
-        # logging com traceback completo
+        """Captura erros HTTP."""
         current_app.logger.error(f"HTTP Exception caught: {e.code} - {e.description}", exc_info=True)
         if e.response:
             return e.response, e.code 
@@ -86,8 +93,9 @@ def create_app(config_object='config.Config'):
             'code': e.code
         }), e.code
 
-    @app.errorhandler(Exception) # Manipulador genérico para qualquer exceção Python não tratada
+    @app.errorhandler(Exception) 
     def handle_generic_error(e):
+        """Captura erros genéricos."""
         current_app.logger.exception(f"Erro interno do servidor: {e}") # Loga a exceção completa
         return jsonify({'message': 'Ocorreu um erro interno no servidor', 'error': 'Erro inesperado'}), 500
 
@@ -110,4 +118,5 @@ def create_app(config_object='config.Config'):
     return app
 
 if __name__ == '__main__':
+    """Execução do aplicativo Flask."""
     app = create_app()

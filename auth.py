@@ -7,17 +7,20 @@ from models import bcrypt_obj
 jwt = JWTManager()
 
 def configure_auth(app):
+    """Configura a autenticação do aplicativo Flask."""
     jwt.init_app(app)
 
     # Callback para carregar um objeto de usuário a partir do ID contido no token
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
+        """Carrega um objeto de usuário a partir do ID contido no token."""
         identity = jwt_data["sub"] # onde sub é o padrão do JWT
         return User.query.filter_by(id=identity).one_or_none()
 
     # Callback para lidar com tokens não fornecidos ou inválidos
     @jwt.unauthorized_loader
     def unauthorized_response(callback_error):
+        """Lida com tokens não fornecidos ou inválidos."""
         current_app.logger.warning(f"JWT Unauthorized: {callback_error}")
         return jsonify({
             'message': "Autenticação inválida",
@@ -28,6 +31,7 @@ def configure_auth(app):
     # Callback para lidar com tokens expirados
     @jwt.expired_token_loader
     def expired_token_response(jwt_header, jwt_data):
+        """Lida com tokens expirados."""
         current_app.logger.warning(f"JWT Expired: Token de {jwt_data['sub']} expirou.")
         return jsonify({
             'message': "Autenticação inválida",
@@ -38,6 +42,7 @@ def configure_auth(app):
     # Callback para lidar com tokens inválidos (assinatura, estrutura, etc.)
     @jwt.invalid_token_loader
     def invalid_token_response(callback_error):
+        """Lida com tokens inválidos."""
         current_app.logger.warning(f"JWT Invalid Token: {callback_error}")
         return jsonify({
             'message': "Autenticação inválida",
@@ -49,6 +54,7 @@ def configure_auth(app):
     # Rota de login
     @app.route('/login', methods=['POST'])
     def login():
+        """Rota de login."""
         email = request.json.get('email', None)
         password = request.json.get('password', None)
 

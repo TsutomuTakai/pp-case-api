@@ -14,7 +14,7 @@ services:
     command: gunicorn --bind 0.0.0.0:5000 "app:create_app()"
 
   db:
-    image: alpine/git # Usaremos um volume para persistir o SQLite, então uma imagem leve é suficiente
+    image:  docker.io/library/alpine:latest # Usaremos um volume para persistir o SQLite, então uma imagem leve é suficiente
     volumes:
       - db_data:/app/data # Monta um volume para persistir o banco de dados
     command: "tail -f /dev/null" # Mantém o contêiner do DB rodando

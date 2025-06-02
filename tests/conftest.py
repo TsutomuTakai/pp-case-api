@@ -9,6 +9,9 @@ import sys
 
 @pytest.fixture(scope='session')
 def app():
+    """
+    Cria um aplicativo de teste com as configurações de teste
+    """
     app = create_app(config_object=TestConfig)
     with app.app_context():
         db.create_all()
@@ -17,6 +20,9 @@ def app():
 
 @pytest.fixture(scope='function')
 def client(app):
+    """
+    Cria um cliente de teste
+    """
     with app.app_context():
         db.drop_all()
         db.create_all()
@@ -51,6 +57,9 @@ def client(app):
 
 @pytest.fixture(scope='function')
 def auth_client(app):
+    """
+    Cria um cliente de teste autenticado
+    """
     with app.app_context():
         db.drop_all()
         db.create_all()
